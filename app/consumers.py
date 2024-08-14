@@ -2,6 +2,7 @@ from channels.generic.websocket import  AsyncJsonWebsocketConsumer
 from app.models import *
 from django.contrib.auth.models import User
 from datetime import datetime
+import json
 from channels.db import database_sync_to_async
 
 class MyAsyncJsonWebSocketConsumer(AsyncJsonWebsocketConsumer):
@@ -54,5 +55,66 @@ class MyAsyncJsonWebSocketConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def disconnect(self, code):
-        print('websockent disconnect', code)
+        # print('websockent disconnect', code)
+        await self.channel_layer.group_discard(
+            self.group_name,
+            self.channel_layer
+        )
 
+
+
+#  User Online / Offline Status class 
+class onlineStatusAsyncJonWebsocketConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        self.room_group_name = 'user'
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+        await self.accept()
+    
+    async def receive_json(self, content, **kwargs):
+        username = content['username']
+        connection_type = content['type']
+        print(username, connection_type)
+
+        user =await database_sync_to_async(User.objects.get)(username= json.loads(username))
+        onlineStatus =await database_sync_to_async(OnlineStatusModel.objects.get)(user = user)
+
+        if connection_type == 'open':
+            onlineStatus.status = True
+            await database_sync_to_async(onlineStatus.save)()
+        else:
+            onlineStatus.status = False
+            await database_sync_to_async(onlineStatus.save)()
+        print(onlineStatus.status, "Hello Abdul Hasib", onlineStatus.name)
+
+
+        data = {
+            'username':username,
+            'online':onlineStatus.status
+        }
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type':'chat.message',
+                'msg':data,
+            }
+        )
+    
+    async def chat_message(self, event):
+        await self.send_json(
+        {
+            'msg':event['msg']
+        }
+        )
+
+    async def disconnect(self, code):
+        user = self.scope['user'].id
+        online = await database_sync_to_async(OnlineStatusModel.objects.get)(pk = user)
+        online.status = False
+        await database_sync_to_async(online.save)()
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_layer,
+        )

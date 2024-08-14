@@ -111,7 +111,7 @@ img {
 .timestamp {
     font-size: 0.8em;
     color: white;
-    margin-top: 5px;
+    /* margin-top: 5px; */
     display: block;
 }
 

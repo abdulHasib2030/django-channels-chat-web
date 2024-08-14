@@ -13,7 +13,11 @@ def UserRegisterView(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
+            
             user = form.save()
+            fullName = f'{user.first_name} {user.last_name}'
+            onlineStaus = OnlineStatusModel(user = user, name = fullName)
+            onlineStaus.save()
             login(request, user)
             return redirect('home')
     else:
@@ -23,7 +27,9 @@ def UserRegisterView(request):
 
 def ChatPage(request):
     user = User.objects.all()
-    return render(request, 'home.html', {'user':user})
+    onlineStatus = OnlineStatusModel.objects.all()
+    userOnline = zip(user, onlineStatus)
+    return render(request, 'home.html', {'user':user, 'userOnline':userOnline})
 
 
 def login_view(request):
@@ -42,6 +48,7 @@ def login_view(request):
 
 def chat_view(request, username):
     user = User.objects.all()
+    onlineStatus = OnlineStatusModel.objects.all()
     user1 = User.objects.get(username = username)
     user2 = User.objects.get(id = request.user.id)
     direct_messages = DirectMessage.objects.filter(
@@ -58,5 +65,7 @@ def chat_view(request, username):
     # print(msg)
     # for i in msg:
     #     print(i.content,i.chat, i.sender, i.content)
-    return render(request, 'home.html', {'user2':user1, 'user':user,'msg':direct_messages})
+
+    userOnline = zip(user, onlineStatus)
+    return render(request, 'home.html', {'user2':user1, 'user':user,'msg':direct_messages, 'userOnline':userOnline})
 

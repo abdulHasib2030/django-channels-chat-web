@@ -7,3 +7,8 @@ class DirectMessage(models.Model):
     receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField()
+
+class OnlineStatusModel(models.Model):
+    user = models.OneToOneField(to=User, on_delete=models.CASCADE)
+    name = models.CharField(max_length= 1000, null=True)
+    status = models.BooleanField(default=False)

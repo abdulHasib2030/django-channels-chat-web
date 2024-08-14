@@ -5,7 +5,7 @@
 
 <div class="chat-main">
     <div class="user-section">
-        {% for i in user %}
+        {% for i, j in userOnline %}
         {% if i.username == request.user.username or i.username == 'admin' %}
         <p></p>
         {% else %}
@@ -14,6 +14,11 @@
             <a class="user-content" href="{% url 'username' i.username %}">
                 <img src="{% static 'profile/profile.jpg' %}" alt="">
                 <p style="cursor: pointer;" id="username">{{i.username}}</p>
+                {% if j.status  %}
+                <p style="cursor: pointer; color: green;" id="online">online</p>
+                {% else %}
+                <p style="cursor: pointer; color: red;" id="online">offline</p>
+                {% endif %}
             </a>
         </div>
         {% endif %}
@@ -44,7 +49,7 @@
                 {%endif%}
 
                 {%endfor%}
-                
+
                 {% else %}
 
                 <div>
@@ -63,7 +68,12 @@
 </div>
 
 {{user2.id|json_script:"user-id"}}
+{{request.user.username|json_script:'json-username'}}
 <script>
+
+
+
+
 
 
 
@@ -139,6 +149,7 @@
 
     };
 
+
     //  message sendbutton dom
     document.getElementById('send-message').onclick = function (event) {
         const msgDom = document.getElementById('input-message')
@@ -172,6 +183,47 @@
     window.onload = function () {
         scrollToBottom();
     }
+
+
+
+    //     online Status js
+    let onlineStaWs = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/ac/online/'
+    )
+    const usernameLogger = document.getElementById('json-username').innerText
+    // console.log(username, "Lladldkaj")
+    console.log(usernameLogger)
+    onlineStaWs.onopen = function () {
+        onlineStaWs.send(JSON.stringify(
+            {
+                'username': usernameLogger,
+                'type': 'open'
+            }
+        ))
+    }
+
+    onlineStaWs.onmessage = function(event){
+        const data = JSON.parse(event.data)
+        console.log(data)
+        if (data.msg.username != usernameLogger){
+        const onlineDom = document.getElementById('online')
+        if (data.msg.online == true){
+            onlineDom.style.color = 'green';
+            onlineDom.textContent = 'online';
+        }
+        else{
+            onlineDom.style.color = 'red';
+            onlineDom.textContent = 'offline'
+        }
+    }
+    }
+
+
+
+
+
 </script>
 
 {% endblock %}
