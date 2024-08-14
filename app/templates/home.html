@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<h1 style="text-align: center; margin: 40px;">Welcome: {{request.user.first_name}} {{request.user.last_name}}</h1>
+
+<div class="chat-main">
+    <div class="user-section">
+        {% for i in user %}
+        {% if i.username == request.user.username or i.username == 'admin' %}
+        <p></p>
+        {% else %}
+        <div>
+
+            <a class="user-content" href="{% url 'username' i.username %}">
+                <img src="{% static 'profile/profile.jpg' %}" alt="">
+                <p style="cursor: pointer;" id="username">{{i.username}}</p>
+            </a>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="chat-container" id="chat-container">
+        <div class="chat-window">
+            <div class="chat-header">
+                <h2 id="chat-header">{{user2.first_name}} {{user2.last_name}}</h2>
+            </div>
+            <div class="chat-body" id="chat-body">
+
+                {% if msg|length > 0 %}
+                {%for i in msg%}
+                {% if i.sender != request.user %}
+                <div class="message received">
+                    <p>{{i.content}}</p>
+                    <span class="timestamp">{{i.timestamp}}</span>
+                </div>
+
+
+                {%else%}
+                <div class="message sent">
+                    <p>{{i.content}}</p>
+                    <span class="timestamp">{{i.timestamp}}</span>
+                </div>
+                {%endif%}
+
+                {%endfor%}
+                
+                {% else %}
+
+                <div>
+                    <h2 id="empty-message">Message now {{user2.first_name}} {{user2.last_name}}</h2>
+                </div>
+                {% endif %}
+
+            </div>
+            <div class="chat-footer">
+                <input type="text" id="input-message" placeholder="Type your message...">
+                <button id="send-message" type="submit">Send</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{{user2.id|json_script:"user-id"}}
+<script>
+
+
+
+
+    const userId = JSON.parse(document.getElementById('user-id').textContent)
+    var ws = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/ac/'
+        + userId
+        + '/'
+    )
+
+
+    ws.onopen = function () {
+        console.log("websocket connect")
+    }
+
+    ws.onmessage = function (event) {
+        const data = JSON.parse(event.data); // convert string to object
+        console.log(data.msg.username)
+        let dateLower = JSON.stringify(data.msg.date)
+
+
+
+        // Create a new Date object
+        const date = new Date(dateLower); // Example date and time
+
+        // Function to format the date
+        function formatDate(date) {
+            // Define month names
+            const monthNames = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
+
+            // Get date components
+            const month = monthNames[date.getMonth()];
+            const day = date.getDate();
+            const year = date.getFullYear();
+
+            // Get time components
+            let hours = date.getHours();
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
+
+            // Convert to 12-hour format
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+
+            // Combine into the desired format
+            return `${month} ${day}, ${year}, ${hours}:${minutes} ${ampm}`;
+        }
+
+        // Use the function to format the date
+        const formattedDated = (formatDate(date));
+
+        //  message send live datd show user for fronted
+
+        if (data.msg.username == '{{user2.username}}') {
+            document.querySelector('#chat-body').innerHTML += `
+        <div class="message sent">
+                <p >${data.msg.msg}</p>
+                <span class="timestamp">${formattedDated}</span>
+            </div>
+`}
+        else {
+            document.querySelector('#chat-body').innerHTML += `
+    <div class="message received">
+                <p>${data.msg.msg}</p>
+                <span class="timestamp">${formattedDated}</span>
+            </div>        
+ `}
+        const chatContainer = document.getElementById('chat-body')
+        chatContainer.scrollTop = chatContainer.scrollHeight
+
+    };
+
+    //  message sendbutton dom
+    document.getElementById('send-message').onclick = function (event) {
+        const msgDom = document.getElementById('input-message')
+        const message = msgDom.value
+        const user_id = document.getElementById('user-id').textContent
+        const emptyMessage = document.getElementById('empty-message')
+        console.log(user_id)
+        console.log(user_id)
+
+
+
+        ws.send(JSON.stringify({  /// input field data send backend for channel 
+            'msg': message,
+            'id': user_id,
+        }))
+        msgDom.value = ''
+        emptyMessage.textContent = ''
+    }
+
+    // username image and name click show option
+    document.getElementById('username').onclick = function (event) {
+        const user = (document.getElementById('username').innerText)
+        document.getElementById('chat-header').innerText = user
+    }
+
+    //  page load then show last message 
+    function scrollToBottom() {
+        const downMsg = document.getElementById('chat-body')
+        downMsg.scrollTop = downMsg.scrollHeight
+    }
+    window.onload = function () {
+        scrollToBottom();
+    }
+</script>
+
+{% endblock %}

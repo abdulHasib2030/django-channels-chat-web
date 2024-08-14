@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<h1 style="text-align: center;">Register Your Account</h1>
+
+<form action="" method="post">
+    {% csrf_token %}
+    <div >
+        <label for="">{{form.username.label}}</label>
+        {{form.username}}
+    </div>
+    <div>
+        <label for="">{{form.email.label}}</label>
+        {{form.email}}
+    </div>
+    <div>
+        <label for="">{{form.first_name.label}}</label>
+        {{form.first_name}}
+    </div>
+    <div>
+        <label for="">{{form.last_name.label}}</label>
+        {{form.last_name}}
+    </div>
+    <div>
+        <label for="">{{form.password1.label}}</label>
+        {{form.password1}}
+    </div>
+    <div>
+        <label for="">{{form.password2.label}}</label>
+        {{form.password2}}
+    </div>
+
+    <div>
+        <button style="cursor: pointer;" type="submit">Signup</button>
+    </div>
+</form>
+
+{% if form.errors %}
+<div>
+    <h2>Errors:</h2>
+    <ol>
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li > {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ol>
+</div>
+{% endif %}
+
+{% endblock %}

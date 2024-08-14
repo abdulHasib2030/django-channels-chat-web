@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 style="text-align: center; margin: 40px;">Chat Aplication</h1>
+<div style="text-align: center;">
+<button ><a href="{% url 'login' %}">Login</a></button>
+<button ><a href="{% url 'signup' %}">Signup</a></button>
+</div>
+{% endblock %}
